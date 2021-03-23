@@ -83,18 +83,14 @@ contract InverseResolver is Helpers {
 
     function deposit(address erc20, uint256 tokenAmt, IVault vault) external payable {
         require(tokenAmt > 0, "ZERO-AMOUNT");
+        uint256 realAmt = tokenAmt == uint256(-1)
+            ? IERC20(erc20).balanceOf(address(this))
+            : tokenAmt;
 
-        ERC20Interface token = ERC20Interface(erc20);
-        require(
-            tokenAmt <= token.balanceOf(address(this)),
-            "INSUFFICIENT-BALANCE"
-        );
-        
-        IVault ethaVault = IVault(vault);
-        setApproval(erc20, tokenAmt, address(vault));
-        ethaVault.deposit(tokenAmt);
+        setApproval(erc20, realAmt, address(vault));
+        vault.deposit(realAmt);
 
-        emit VaultDeposit(erc20, tokenAmt);
+        emit VaultDeposit(erc20, realAmt);
     }
 
     function depositAndWait(address erc20, uint256 tokenAmt, IVault vault) external payable {
@@ -121,17 +117,6 @@ contract InverseResolver is Helpers {
         emit VaultWithdraw(address(vault), vaultAmt);
     }
 
-    function withdrawAndWait(IVault vault, uint256 vaultAmt) external payable {
-        require(
-            vault.balanceOf(address(this)) >= vaultAmt,
-            "INSUFFICIENT-BALANCE"
-        );
-
-        setApproval(address(vault), vaultAmt, address(vault));
-        vault.withdrawPending(vaultAmt);
-        emit VaultWithdrawPending(address(vault), vaultAmt);
-    }
-
     function withdrawPending(uint256 tokenAmt, address vault) external {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
         IVault ethaVault = IVault(vault);
@@ -141,16 +126,6 @@ contract InverseResolver is Helpers {
         );
         ethaVault.withdrawPending(tokenAmt);
         emit VaultWithdrawPending(vault, tokenAmt);
-    }
-
-    function withdraw(uint256 tokenAmt, address vault) external {
-        require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        require(
-            tokenAmt <= ERC20Interface(vault).balanceOf(address(this)),
-            "amountToBeRedeemed-greaterThanAvailableBalance"
-        );
-        IVault(vault).withdraw(tokenAmt);
-        emit VaultWithdraw(vault, tokenAmt);
     }
 
     function claim(address vault) external {
