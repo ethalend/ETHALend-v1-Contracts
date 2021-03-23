@@ -51,7 +51,7 @@ contract YTokenStrat is IStrat {
 
     function invest() external override onlyVault {
         uint balance = underlying.balanceOf(address(this));
-        console.log("balance", balance);
+        // console.log("balance", balance);
         if(balance > buffer) {
             uint max = yToken.availableDepositLimit();
             yToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
@@ -61,7 +61,7 @@ contract YTokenStrat is IStrat {
 
     function divest(uint amount) external override onlyVault {
         uint balance = underlying.balanceOf(address(this));
-        console.log("balance", balance);
+        // console.log("balance", balance);
         if(balance < amount) {
             uint missingAmount = amount - balance; // can't underflow because of above it statement
             require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage on Yearn's side. Users must split into multiple txs
