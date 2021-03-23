@@ -1,66 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
-interface ICurve {
-    // solium-disable-next-line mixedcase
-    function get_dy_underlying(
-        int128 i,
-        int128 j,
-        uint256 dx
-    ) external view returns (uint256 dy);
-
-    // solium-disable-next-line mixedcase
-    function get_dy(
-        int128 i,
-        int128 j,
-        uint256 dx
-    ) external view returns (uint256 dy);
-
-    // solium-disable-next-line mixedcase
-    function exchange_underlying(
-        int128 i,
-        int128 j,
-        uint256 dx,
-        uint256 minDy
-    ) external;
-
-    // solium-disable-next-line mixedcase
-    function exchange(
-        int128 i,
-        int128 j,
-        uint256 dx,
-        uint256 minDy
-    ) external;
-
-    // solium-disable-next-line mixedcase
-    function underlying_coins(
-        int128 arg0
-    ) external view returns(address);
-}
-
-interface ICurveRegistry {
-    function find_pool_for_coins(
-        address _from,
-        address _to,
-        uint256 i
-    ) external view returns (address);
-
-    function get_exchange_amount(
-        address _pool,
-        address _from,
-        address _to,
-        uint256 _amount
-    ) external view returns (uint256);
-}
-
-interface IERC20 {
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-}
+import "../interfaces/IERC20.sol";
+import "../interfaces/ICurve.sol";
+import "../interfaces/ICurveTwo.sol";
+import "../interfaces/ICurveRegistry.sol";
 
 contract CurveLogic {
     // CURVE REGISTRY
@@ -125,10 +69,9 @@ contract CurveLogic {
         uint256 srcAmt,
         address to
     ) internal {
-        IERC20 erc20Contract = IERC20(erc20);
-        uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
+        uint256 tokenAllowance = IERC20(erc20).allowance(address(this), to);
         if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, uint(-1));
+            IERC20(erc20).approve(to, uint(-1));
         }
     }
 
@@ -266,5 +209,25 @@ contract CurveLogic {
     }
 
     // TODO: Generic Function to Swap on any Pool
+
+    /**
+     * @notice add liquidity to Curve Pool
+     */
+    function addLiquidity(
+        ICurveTwo curveToken,
+        IERC20 underlying,
+        uint256 amount,
+        uint256 tokenId // 0 or 1
+    ) external payable {
+        uint256 realAmt = amount == uint256(-1)
+            ? underlying.balanceOf(address(this))
+            : amount;
+
+        uint256[2] memory tokenAmts;
+        tokenAmts[tokenId] = realAmt;
+
+        setApproval(address(underlying), amount, address(curveToken));
+        curveToken.add_liquidity(tokenAmts, 0);
+    }
     
 }
