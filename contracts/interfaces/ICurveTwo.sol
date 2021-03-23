@@ -11,7 +11,7 @@ interface ICurveTwo {
     ) external;
 
     function add_liquidity(uint256[2] calldata amounts, uint256 min_mint_amount)
-        external;
+        external payable;
 
     function remove_liquidity_imbalance(
         uint256[2] calldata amounts,

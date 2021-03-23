@@ -39,6 +39,7 @@ contract CurveLogic {
     address constant BUSD_ADDRESS = 0x4Fabb145d64652a948d72533023f6E7A623C7C53;
     address constant SUSD_ADDRESS = 0x57Ab1ec28D129707052df4dF418D58a2D46d5f51;
     address constant PAX_ADDRESS = 0x8E870D67F660D95d5be530380D0eC0bd388289E1;
+    address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     function getBestRate(
         address src,
@@ -226,8 +227,12 @@ contract CurveLogic {
         uint256[2] memory tokenAmts;
         tokenAmts[tokenId] = realAmt;
 
-        setApproval(address(underlying), amount, address(curveToken));
-        curveToken.add_liquidity(tokenAmts, 0);
+        uint value = amount;
+        if(address(underlying) != ETH_ADDRESS) {
+            value = 0;
+            setApproval(address(underlying), amount, address(curveToken));
+        }
+        curveToken.add_liquidity{value:value}(tokenAmts, 0);
     }
     
 }

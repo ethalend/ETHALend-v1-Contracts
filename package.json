@@ -8,6 +8,7 @@
     "test-w": "hardhat test ./test/wallet.test.js",
     "test-v": "hardhat test ./test/vault.test.js",
     "test-v2": "hardhat test ./test/vault2.test.js",
+    "test-v3": "hardhat test ./test/vault3.test.js",
     "test-m": "hardhat test ./test/metatx.test.js",
     "test-b": "hardhat test ./test/balancer.test.js",
     "test-n": "hardhat test ./test/nfts.test.js",
