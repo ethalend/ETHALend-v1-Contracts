@@ -9,6 +9,7 @@
     "test-v": "hardhat test ./test/vault.test.js",
     "test-s": "hardhat test ./test/staking.test.js",
     "test-m": "hardhat test ./test/metatx.test.js",
+    "test-d": "hardhat test ./test/distribution.test.js",
     "compile": "hardhat compile",
     "deploy": "truffle migrate --reset --network etha",
     "deploy-main": "truffle migrate --reset --network mainnet",

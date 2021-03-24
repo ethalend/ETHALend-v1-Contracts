@@ -1,6 +1,6 @@
 pragma solidity ^0.5.16;
 
-import "./distribution.sol";
+import "./Distribution.sol";
 
 contract DistributionFactory is Ownable {
     // immutables
