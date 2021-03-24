@@ -8,6 +8,7 @@ import "../libs/Timelock.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "hardhat/console.sol";
+import "../interfaces/IDistribution.sol";
 
 contract Vault is Ownable, Pausable, DividendToken {
     using SafeMath for uint256;
@@ -22,23 +23,25 @@ contract Vault is Ownable, Pausable, DividendToken {
     uint public performanceFee = 0; // 0% of profit
     // if depositLimit = 0 then there is no deposit limit
     uint public depositLimit;
-    uint public lastDistribution;    
+    uint public lastDistribution;
     uint256 public pendingTotal = 0;
     mapping(address => uint256) public pending;
     address[] public addressesPendingForMinting;
+    address public distribution;
 
     // EVENTS
     event HarvesterChanged(address newHarvester);
     event FeeUpdate(uint256 newFee);
     event StrategyChanged(address newStrat);
     event DepositLimitUpdated(uint newLimit);
+    event NewDistribution(address newDistribution);
 
     modifier onlyHarvester {
         require(msg.sender == harvester);
         _;
     }
 
-    constructor(IERC20Detailed underlying_, IERC20 reward_, address harvester_, string memory name_, string memory symbol_)
+    constructor(IERC20Detailed underlying_, IERC20 reward_, address harvester_, string memory name_, string memory symbol_, address _distribution)
     DividendToken(reward_, name_, symbol_, 18)
     {
         underlying = underlying_;
@@ -46,10 +49,16 @@ contract Vault is Ownable, Pausable, DividendToken {
         depositLimit = 20000 * (10**18); // 20k initial deposit limit
         timelock = new Timelock(msg.sender, 2 days);
         _pause(); // paused until a strategy is connected
+        distribution = _distribution;
     }
 
     function calcTotalValue() public returns (uint underlyingAmount) {
         return strat.calcTotalValue();
+    }
+
+    function updateDistribution(address newDistribution) public onlyOwner {
+        distribution = newDistribution;
+        emit NewDistribution(newDistribution);
     }
 
     function deposit(uint amount) external whenNotPaused {
@@ -60,6 +69,9 @@ contract Vault is Ownable, Pausable, DividendToken {
         underlying.safeTransferFrom(msg.sender, address(strat), amount);
         strat.invest();
         _mint(msg.sender, amount);
+        if(distribution != address(0)){
+          IDistribution(distribution).stake(msg.sender, amount);
+        }
     }
 
     function depositAndWait(uint amount) external whenNotPaused {
@@ -78,6 +90,9 @@ contract Vault is Ownable, Pausable, DividendToken {
         _burn(msg.sender, amount);
         strat.divest(amount);
         underlying.safeTransfer(msg.sender, amount);
+        if(distribution != address(0)){
+          IDistribution(distribution).withdraw(msg.sender, amount);
+        }
     }
 
     function withdrawPending(uint amount) external {
@@ -111,6 +126,9 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     function claim() external {
         withdrawDividend(msg.sender);
+        if(distribution != address(0)){
+          IDistribution(distribution).getReward(msg.sender);
+        }
     }
 
     // Used to claim on behalf of certain contracts e.g. Uniswap pool
