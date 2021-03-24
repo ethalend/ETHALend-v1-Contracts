@@ -41,7 +41,7 @@ contract Vault is Ownable, Pausable, DividendToken {
         _;
     }
 
-    constructor(IERC20Detailed underlying_, IERC20 reward_, address harvester_, string memory name_, string memory symbol_, address _distribution)
+    constructor(IERC20Detailed underlying_, IERC20 reward_, address harvester_, string memory name_, string memory symbol_)
     DividendToken(reward_, name_, symbol_, 18)
     {
         underlying = underlying_;
@@ -49,7 +49,6 @@ contract Vault is Ownable, Pausable, DividendToken {
         depositLimit = 20000 * (10**18); // 20k initial deposit limit
         timelock = new Timelock(msg.sender, 2 days);
         _pause(); // paused until a strategy is connected
-        distribution = _distribution;
     }
 
     function calcTotalValue() public returns (uint underlyingAmount) {

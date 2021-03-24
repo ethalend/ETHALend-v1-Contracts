@@ -11,6 +11,7 @@
     "test-v3": "hardhat test ./test/vault3.test.js",
     "test-m": "hardhat test ./test/metatx.test.js",
     "test-b": "hardhat test ./test/balancer.test.js",
+    "test-vd": "hardhat test ./test/vaultWithDistribution.test.js",
     "test-n": "hardhat test ./test/nfts.test.js",
     "compile": "hardhat compile",
     "deploy": "truffle migrate --reset --network etha",
