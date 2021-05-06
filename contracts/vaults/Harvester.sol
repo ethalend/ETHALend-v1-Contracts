@@ -2,6 +2,7 @@
 pragma solidity 0.7.3;
 import "../interfaces/IVault.sol";
 import "../interfaces/IUniswapV2Router.sol";
+import "../interfaces/IOneSplit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "hardhat/console.sol";
@@ -12,10 +13,9 @@ contract Harvester is Ownable {
     event Harvested(address indexed vault, address indexed sender);
 
     IUniswapV2Router constant ROUTER = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    IOneSplit split = IOneSplit(0xC586BeF4a0992C495Cf22e1aeEE4E446CECDee0E); // 1split.eth
 
     mapping (IVault => uint) public ratePerToken;
-
-    mapping (IVault => uint) public lastHarvest;
 
     uint public delay;
 
@@ -24,13 +24,15 @@ contract Harvester is Ownable {
     }
 
     modifier onlyAfterDelay(IVault vault){
-        require(block.timestamp >= lastHarvest[vault].add(delay), "Not ready to harvest");
+        require(block.timestamp >= vault.lastDistribution().add(delay), "Not ready to harvest");
         _;
     }
 
+    /**
+        @notice Harvest vault using uniswap
+        @dev any user can harvest after delay has passed
+     */
     function harvestVault(IVault vault) public onlyAfterDelay(vault) {
-        lastHarvest[vault] = block.timestamp;
-
         // Amount to Harvest
         uint amount = vault.underlyingYield();
         require(amount > 0, "!Yield");
@@ -60,6 +62,10 @@ contract Harvester is Ownable {
         emit Harvested(address(vault), msg.sender);
     }
 
+    /**
+        @notice Harvest vault using uniswap
+        @dev only owner
+     */
     function harvestVaultOwner(
         IVault vault, 
         uint amount, 
@@ -68,8 +74,6 @@ contract Harvester is Ownable {
         uint deadline
     ) public onlyOwner onlyAfterDelay(vault) {
         require(amount > 0, "amount not zero");
-
-        lastHarvest[vault] = block.timestamp;
 
         uint afterFee = vault.harvest(amount);
         uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
@@ -87,6 +91,37 @@ contract Harvester is Ownable {
         to.approve(address(vault), received);
 
         vault.distribute(received);
+
+        emit Harvested(address(vault), msg.sender);
+    }
+
+    /**
+        @notice Harvest vault using 1inch swap
+        @dev only owner
+     */
+    function harvestVaultOwner2(
+        IVault vault, 
+        uint256 amount,
+        uint256 minReturn,
+        uint256[] memory distribution,
+         uint256 flags
+    ) public onlyOwner onlyAfterDelay(vault) {
+        require(amount > 0, "amount not zero");
+
+        uint afterFee = vault.harvest(amount);
+        uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
+
+        // Tokens to swap
+        IERC20 src = vault.underlying();
+        IERC20 dest = vault.target();
+
+        ratePerToken[vault] = afterFee.mul(10**(36-IERC20Detailed(address(src)).decimals())).div(vault.totalSupply()).div(durationSinceLastHarvest);
+
+        src.approve(address(split), afterFee);
+        uint returnAmount = split.swap(src, dest, amount, minReturn, distribution, flags);
+        dest.approve(address(vault), returnAmount);
+
+        vault.distribute(returnAmount);
 
         emit Harvested(address(vault), msg.sender);
     }
