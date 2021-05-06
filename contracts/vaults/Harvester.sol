@@ -4,15 +4,30 @@ import "../interfaces/IVault.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "hardhat/console.sol";
 
 contract Harvester is Ownable {
     using SafeMath for uint256;
+
+    event Harvested(address indexed vault, address indexed sender);
+
     IUniswapV2Router constant ROUTER = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
     mapping (IVault => uint) public ratePerToken;
 
-    function harvestVault(IVault vault, uint amount, uint outMin, address[] calldata path, uint deadline) public onlyOwner {
+    mapping (IVault => uint) public lastHarvest;
+
+    uint public delay;
+
+    constructor(uint _delay){
+        delay = _delay;
+    }
+
+    modifier onlyAfterDelay(IVault vault){
+        require(block.timestamp >= lastHarvest[vault].add(delay), "Not ready to harvest");
+        _;
+    }
+
+    function harvestVault(IVault vault, uint amount, uint outMin, address[] calldata path, uint deadline) public onlyAfterDelay(vault) {
         uint afterFee = vault.harvest(amount);
         uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
 
@@ -29,6 +44,10 @@ contract Harvester is Ownable {
         to.approve(address(vault), received);
 
         vault.distribute(received);
+
+        lastHarvest[vault] = block.timestamp;
+
+        Harvested(address(vault), msg.sender);
     }
 
     // no tokens should ever be stored on this contract. Any tokens that are sent here by mistake are recoverable by the owner

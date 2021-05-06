@@ -15,6 +15,7 @@ const IERC20 = artifacts.require(
 
 const {
   expectEvent,
+  expectRevert,
   time,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
@@ -61,9 +62,8 @@ contract("yDAI Vault", () => {
       params: [
         {
           forking: {
-            jsonRpcUrl:
-              `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-            blockNumber: 12284000,
+            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+            blockNumber: 12304000,
           },
         },
       ],
@@ -136,7 +136,7 @@ contract("yDAI Vault", () => {
   });
 
   it("should deploy the Harvester contract", async function () {
-    harvester = await Harvester.new();
+    harvester = await Harvester.new(Number(time.duration.hours(2)));
   });
 
   it("should deploy the vault contract", async function () {
@@ -312,7 +312,7 @@ contract("yDAI Vault", () => {
     );
   });
 
-  it("Should harvest profits for yDAI vault", async function () {
+  it.skip("Should harvest profits for yearn yDAI vault", async function () {
     const ppsStart = await yDai.pricePerShare();
     console.log("\tpps before:", fromWei(ppsStart));
     await time.advanceBlock();
@@ -344,10 +344,13 @@ contract("yDAI Vault", () => {
   });
 
   it("Should have profits in ETHA vault", async function () {
+    // Avoid yearn harvest, alter calculation of total value;
+    await dai.transfer(strat.address, toWei(1000), { from: USER });
+
     const totalValue = await strat.calcTotalValue();
     const totalSupply = await vault.totalSupply();
 
-    assert(totalValue > totalSupply);
+    assert(fromWei(totalValue) > fromWei(totalSupply));
   });
 
   it("Should harvest profits in ETHA Vault", async function () {
@@ -357,10 +360,40 @@ contract("yDAI Vault", () => {
 
     await harvester.harvestVault(
       vault.address,
-      toWei(0.0001),
+      toWei(0.00001),
       1,
       [DAI_ADDRESS, WETH_ADDRESS],
       now + 1
+    );
+  });
+
+  it("Should harvest profits in ETHA Vault after correct delay", async function () {
+    await time.advanceBlock();
+
+    let now = Number(await time.latest());
+
+    await expectRevert(
+      harvester.harvestVault(
+        vault.address,
+        toWei(0.00001),
+        1,
+        [DAI_ADDRESS, WETH_ADDRESS],
+        now + 1,
+        { from: USER }
+      ),
+      "Not ready to harvest"
+    );
+
+    await time.increase(time.duration.hours(2));
+    now = Number(await time.latest());
+
+    await harvester.harvestVault(
+      vault.address,
+      toWei(0.00001),
+      1,
+      [DAI_ADDRESS, WETH_ADDRESS],
+      now + 1,
+      { from: USER }
     );
   });
 
