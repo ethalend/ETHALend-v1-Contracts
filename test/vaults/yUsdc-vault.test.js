@@ -326,17 +326,17 @@ contract("yUSDC Vault", ([multisig, alice]) => {
   });
 
   it("Should harvest profits in ETHA Vault", async function () {
-    await time.advanceBlock();
+    await harvester.harvestVault(vault.address, { from: alice });
+  });
 
-    const now = Number(await time.latest());
+  it("Should have profits in ETHA vault (again)", async function () {
+    // Avoid yearn harvest, alter calculation of total value;
+    await usdc.transfer(strat.address, String(200e6), { from: USDC_HOLDER });
 
-    await harvester.harvestVault(
-      vault.address,
-      "1000",
-      1,
-      [USDC_ADDRESS, WETH_ADDRESS],
-      now + 1
-    );
+    const totalValue = await strat.calcTotalValue();
+    const totalSupply = await vault.totalSupply();
+
+    assert(fromWei(totalValue) > fromWei(totalSupply));
   });
 
   it("Should harvest profits in ETHA Vault only after delay", async function () {
@@ -345,26 +345,14 @@ contract("yUSDC Vault", ([multisig, alice]) => {
     let now = Number(await time.latest());
 
     await expectRevert(
-      harvester.harvestVault(
-        vault.address,
-        "1000",
-        1,
-        [USDC_ADDRESS, WETH_ADDRESS],
-        now + 1
-      ),
+      harvester.harvestVault(vault.address, { from: alice }),
       "Not ready to harvest"
     );
 
     await time.increase(time.duration.hours(2));
     now = Number(await time.latest());
 
-    await harvester.harvestVault(
-      vault.address,
-      "1000",
-      1,
-      [USDC_ADDRESS, WETH_ADDRESS],
-      now + 1
-    );
+    await harvester.harvestVault(vault.address, { from: alice });
   });
 
   it("Should claim ETH profits from vault", async function () {

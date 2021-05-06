@@ -345,7 +345,7 @@ contract("yDAI Vault", () => {
 
   it("Should have profits in ETHA vault", async function () {
     // Avoid yearn harvest, alter calculation of total value;
-    await dai.transfer(strat.address, toWei(1000), { from: USER });
+    await dai.transfer(strat.address, toWei(100), { from: USER });
 
     const totalValue = await strat.calcTotalValue();
     const totalSupply = await vault.totalSupply();
@@ -354,17 +354,17 @@ contract("yDAI Vault", () => {
   });
 
   it("Should harvest profits in ETHA Vault", async function () {
-    await time.advanceBlock();
+    await harvester.harvestVault(vault.address);
+  });
 
-    const now = Number(await time.latest());
+  it("Should have profits in ETHA vault (again)", async function () {
+    // Avoid yearn harvest, alter calculation of total value;
+    await dai.transfer(strat.address, toWei(100), { from: USER });
 
-    await harvester.harvestVault(
-      vault.address,
-      toWei(0.00001),
-      1,
-      [DAI_ADDRESS, WETH_ADDRESS],
-      now + 1
-    );
+    const totalValue = await strat.calcTotalValue();
+    const totalSupply = await vault.totalSupply();
+
+    assert(fromWei(totalValue) > fromWei(totalSupply));
   });
 
   it("Should harvest profits in ETHA Vault after correct delay", async function () {
@@ -373,28 +373,14 @@ contract("yDAI Vault", () => {
     let now = Number(await time.latest());
 
     await expectRevert(
-      harvester.harvestVault(
-        vault.address,
-        toWei(0.00001),
-        1,
-        [DAI_ADDRESS, WETH_ADDRESS],
-        now + 1,
-        { from: USER }
-      ),
+      harvester.harvestVault(vault.address, { from: USER }),
       "Not ready to harvest"
     );
 
     await time.increase(time.duration.hours(2));
     now = Number(await time.latest());
 
-    await harvester.harvestVault(
-      vault.address,
-      toWei(0.00001),
-      1,
-      [DAI_ADDRESS, WETH_ADDRESS],
-      now + 1,
-      { from: USER }
-    );
+    await harvester.harvestVault(vault.address, { from: USER });
   });
 
   it("Should claim ETH profits from vault", async function () {

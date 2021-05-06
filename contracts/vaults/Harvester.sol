@@ -4,6 +4,7 @@ import "../interfaces/IVault.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "hardhat/console.sol";
 
 contract Harvester is Ownable {
     using SafeMath for uint256;
@@ -27,7 +28,18 @@ contract Harvester is Ownable {
         _;
     }
 
-    function harvestVault(IVault vault, uint amount, uint outMin, address[] calldata path, uint deadline) public onlyAfterDelay(vault) {
+    function harvestVault(IVault vault) public onlyAfterDelay(vault) {
+        lastHarvest[vault] = block.timestamp;
+
+        // Amount to Harvest
+        uint amount = vault.underlyingYield();
+        require(amount > 0, "!Yield");
+
+        // Uniswap path
+        address[] memory path = new address[](2);
+        path[0] = address(vault.underlying());
+        path[1] = address(vault.target());
+
         uint afterFee = vault.harvest(amount);
         uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
 
@@ -40,14 +52,12 @@ contract Harvester is Ownable {
         require(path[path.length-1] == address(to), "Incorrect target");
 
         from.approve(address(ROUTER), afterFee);
-        uint received = ROUTER.swapExactTokensForTokens(afterFee, outMin, path, address(this), deadline)[path.length-1];
+        uint received = ROUTER.swapExactTokensForTokens(afterFee, 1, path, address(this), block.timestamp+1)[path.length-1];
         to.approve(address(vault), received);
 
-        vault.distribute(received);
+        vault.distribute(received);       
 
-        lastHarvest[vault] = block.timestamp;
-
-        Harvested(address(vault), msg.sender);
+        emit Harvested(address(vault), msg.sender);
     }
 
     // no tokens should ever be stored on this contract. Any tokens that are sent here by mistake are recoverable by the owner
