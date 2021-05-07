@@ -263,7 +263,6 @@ contract CompoundResolver is Helpers {
         if (toBurn > cTokenAmt) {
             toBurn = cTokenAmt;
         }
-        setApproval(cErc20, toBurn, cErc20);
         require(cToken.redeem(toBurn) == 0, "something went wrong");
         uint256 tokenReturned = wmul(toBurn, cToken.exchangeRateCurrent());
 
@@ -297,7 +296,6 @@ contract CompoundResolver is Helpers {
         uint256 tokenAmt
     ) external payable{
         CTokenInterface cToken = CTokenInterface(cErc20);
-        setApproval(cErc20, 10**50, cErc20);
         uint256 toBurn = cToken.balanceOf(address(this));
         uint256 tokenToReturn = wmul(toBurn, cToken.exchangeRateCurrent());
         if (tokenToReturn > tokenAmt) {
@@ -314,7 +312,7 @@ contract CompoundResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if(fee > 0){ 
+        if(fee > 0){
             if (erc20 == getAddressETH()) {
                 feeRecipient.transfer(div(mul(tokenToReturn, fee), 100000));
             } else {
@@ -324,7 +322,7 @@ contract CompoundResolver is Helpers {
                 );
             }
         }
-        
+
         emit LogRedeem(erc20, tokenToReturn);
     }
 
