@@ -291,7 +291,7 @@ contract Helpers is DSMath {
         ERC20Interface erc20Contract = ERC20Interface(erc20);
         uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
         if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, sub(srcAmt, tokenAllowance));
+            erc20Contract.approve(to, uint(-1));
         }
     }
 }
@@ -307,7 +307,7 @@ contract AaveResolver is Helpers {
      */
     function mintAToken(address erc20, uint256 tokenAmt) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        if (erc20 == getAddressETH()) {            
+        if (erc20 == getAddressETH()) {
             require(tokenAmt <= address(this).balance, "notEnoughEthereum");
             AaveLendingPoolInterface aToken = AaveLendingPoolInterface(
                 getLendingPoolAddress()
@@ -329,7 +329,7 @@ contract AaveResolver is Helpers {
     }
 
     /**
-     * @dev Deposit ETH/ERC20 and mint Aave V2 Tokens 
+     * @dev Deposit ETH/ERC20 and mint Aave V2 Tokens
      */
     function mintATokenV2(address erc20, uint256 tokenAmt) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
@@ -380,7 +380,7 @@ contract AaveResolver is Helpers {
                 );
             }
         }
-        
+
         emit LogRedeem(tokenAddress, aTokenAmt);
     }
 
@@ -419,7 +419,7 @@ contract AaveResolver is Helpers {
                 );
             }
         }
-        
+
         emit LogRedeem(tokenAddress, aTokenAmt);
     }
 
@@ -427,7 +427,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function borrow(address erc20, uint tokenAmt) external payable {        
+    function borrow(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
             getLendingPoolAddress()
         );
@@ -442,7 +442,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function borrowV2(address erc20, uint tokenAmt) external payable {        
+    function borrowV2(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
             getLendingPoolAddressV2()
         );
@@ -456,7 +456,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function repay(address erc20, uint tokenAmt) external payable {        
+    function repay(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
             getLendingPoolAddress()
         );
@@ -478,7 +478,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function repayV2(address erc20, uint tokenAmt) external payable {        
+    function repayV2(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
             getLendingPoolAddressV2()
         );
