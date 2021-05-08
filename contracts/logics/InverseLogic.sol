@@ -61,17 +61,15 @@ contract Helpers is DSMath {
     /**
      * @dev unlimited approval
      */
-    function setApproval(
-        address erc20,
-        uint256 srcAmt,
-        address to
-    ) internal {
-        ERC20Interface erc20Contract = ERC20Interface(erc20);
-        uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
-        if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, uint(-1));
-        }
-    }
+     function setApproval(
+         address erc20,
+         uint256 srcAmt,
+         address to
+     ) internal {
+         if (srcAmt > ERC20Interface(erc20).allowance(address(this), to)) {
+             ERC20Interface(erc20).approve(to, uint(-1));
+         }
+     }
 }
 
 contract InverseResolver is Helpers {
@@ -85,7 +83,7 @@ contract InverseResolver is Helpers {
             tokenAmt <= ERC20Interface(erc20).balanceOf(address(this)),
             "INSUFFICIENT-BALANCE"
         );
-        
+
         IVault ethaVault = IVault(vault);
         setApproval(erc20, tokenAmt, address(vault));
         ethaVault.deposit(tokenAmt);

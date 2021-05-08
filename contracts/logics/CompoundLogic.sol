@@ -3,6 +3,7 @@ pragma solidity ^0.7.0;
 
 import "hardhat/console.sol";
 
+
 interface CTokenInterface {
     function redeem(uint256 redeemTokens) external returns (uint256);
 
@@ -196,17 +197,15 @@ contract Helpers is DSMath {
     /**
      * @dev setting allowance to compound for the "user proxy" if required
      */
-    function setApproval(
-        address erc20,
-        uint256 srcAmt,
-        address to
-    ) internal {
-        ERC20Interface erc20Contract = ERC20Interface(erc20);
-        uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
-        if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, uint(-1));
-        }
-    }
+     function setApproval(
+         address erc20,
+         uint256 srcAmt,
+         address to
+     ) internal {
+         if (srcAmt > ERC20Interface(erc20).allowance(address(this), to)) {
+             ERC20Interface(erc20).approve(to, uint(-1));
+         }
+     }
 }
 
 contract CompoundResolver is Helpers {

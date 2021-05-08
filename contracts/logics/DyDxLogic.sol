@@ -90,18 +90,15 @@ contract Helpers is DSMath {
     /**
      * @dev setting allowance to dydx for the "user proxy" if required
      */
-    function setApproval(
-        address erc20,
-        uint256 srcAmt,
-        address to
-    ) internal {
-        ERC20Interface erc20Contract = ERC20Interface(erc20);
-        uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
-        // Only runs once, condition wont be true after infinite approving
-        if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, uint256(-1));
-        }
-    }
+     function setApproval(
+         address erc20,
+         uint256 srcAmt,
+         address to
+     ) internal {
+         if (srcAmt > ERC20Interface(erc20).allowance(address(this), to)) {
+             ERC20Interface(erc20).approve(to, uint(-1));
+         }
+     }
 
     /**
      * @dev getting actions arg
@@ -266,7 +263,7 @@ contract DydxResolver is Helpers {
                 );
             }
         }
-        
+
         emit LogRedeem(
             erc20Addr == getAddressWETH() ? getAddressETH() : erc20Addr,
             toWithdraw
@@ -283,7 +280,7 @@ contract DydxResolver is Helpers {
     ) external {
         (uint256 available, bool sign) = getDydxBal(marketId);
         // user should use withdraw function when they have positive balance
-        require(available == 0 || !sign, "withdraw first"); 
+        require(available == 0 || !sign, "withdraw first");
 
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),

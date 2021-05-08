@@ -29,11 +29,11 @@ contract BalancerLogic {
     /**
      * @dev unlimited approval
      */
-    function setApproval(
+     function setApproval(
         IERC20 erc20,
         uint256 srcAmt,
         address to
-    ) internal {        
+    ) internal {
         uint256 tokenAllowance = erc20.allowance(address(this), to);
         if (srcAmt > tokenAllowance) {
             erc20.approve(to, uint(-1));
@@ -98,7 +98,7 @@ contract BalancerLogic {
         uint256 realAmountIn = amountIn == uint256(-1)
             ? tokenIn.balanceOf(address(this))
             : amountIn;
-        
+
         setApproval(tokenIn, realAmountIn, poolAddress);
 
         uint256 bptOut = IBalancerPool(poolAddress).joinswapExternAmountIn(

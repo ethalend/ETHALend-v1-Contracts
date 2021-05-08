@@ -125,17 +125,15 @@ contract CurveLogic {
     /**
      * @dev setting allowance to compound for the "user proxy" if required
      */
-    function setApproval(
-        address erc20,
-        uint256 srcAmt,
-        address to
-    ) internal {
-        IERC20 erc20Contract = IERC20(erc20);
-        uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
-        if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, uint(-1));
-        }
-    }
+     function setApproval(
+         address erc20,
+         uint256 srcAmt,
+         address to
+     ) internal {
+         if (srcAmt > IERC20(erc20).allowance(address(this), to)) {
+             IERC20(erc20).approve(to, uint(-1));
+         }
+     }
 
     function swapOnCurveCompound(
         address src,
@@ -174,7 +172,7 @@ contract CurveLogic {
             if(CURVE_USDT.underlying_coins(x-1) == src) i = x;
             if(CURVE_USDT.underlying_coins(x-1) == dest) j = x;
         }
-        
+
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -198,7 +196,7 @@ contract CurveLogic {
             if(CURVE_Y.underlying_coins(x-1) == src) i = x;
             if(CURVE_Y.underlying_coins(x-1) == dest) j = x;
         }
-        
+
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -222,7 +220,7 @@ contract CurveLogic {
             if(CURVE_B.underlying_coins(x-1) == src) i = x;
             if(CURVE_B.underlying_coins(x-1) == dest) j = x;
         }
-        
+
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -246,7 +244,7 @@ contract CurveLogic {
             if(CURVE_S.underlying_coins(x-1) == src) i = x;
             if(CURVE_S.underlying_coins(x-1) == dest) j = x;
         }
-        
+
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -270,7 +268,7 @@ contract CurveLogic {
             if(CURVE_PAX.underlying_coins(x-1) == src) i = x;
             if(CURVE_PAX.underlying_coins(x-1) == dest) j = x;
         }
-        
+
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -283,5 +281,5 @@ contract CurveLogic {
     }
 
     // TODO: Generic Function to Swap on any Pool
-    
+
 }

@@ -10,7 +10,7 @@ import "../interfaces/IRewards.sol";
 contract StakingLogic {
 
 
-    function setApproval(
+  function setApproval(
         IERC20 erc20,
         uint256 srcAmt,
         address to
